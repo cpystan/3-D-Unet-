@@ -1,0 +1,63 @@
+import numpy as np
+import torch
+import argparse
+from torch.utils.data import DataLoader
+from torch import autograd, optim
+from torchvision.transforms import transforms
+from unet2 import Unet
+from dataset import LiverDataset
+import torchvision
+import torch.utils.data as Data
+import torch.nn as nn
+EPOCH = 1
+BATCH_SIZE = 1
+LR=0.2
+#x_transforms=y_transforms=torchvision.transforms.ToTensor()
+'''
+x_transforms = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+])
+'''
+
+# mask只需要转换为tensor
+#y_transforms = transforms.ToTensor()
+
+#root ="D:\VScode\Chaos Data\MR_data_batch1\\"
+   
+#liver_dataset = LiverDataset(root,target_transform=None)
+root ="D:\VScode\Chaos Data\MR_data_batch1\\"
+liver_dataset =LiverDataset(root,transform=torch.tensor,target_transform=torch.tensor)
+
+
+print(liver_dataset[0][0].dtype)
+#print(liver_dataset[])
+
+train_loader = Data.DataLoader(dataset=liver_dataset,batch_size=BATCH_SIZE,shuffle=True)
+
+unet=Unet(1,1)
+
+optimizer = torch.optim.Adam(unet.parameters(),lr=LR)
+loss_func = nn.CrossEntropyLoss()
+
+
+for epoch in range(EPOCH):
+    for step,(b_x,b_y) in enumerate(train_loader):
+        if step<20:
+            #b_y = b_y.long()
+            b_x = torch.unsqueeze(b_x,0)
+            b_y = torch.unsqueeze(b_y,0)
+            #b_x = torch.tensor(b_x,dtype=torch.float16)
+            #_y = torch.tensor(b_y,dtype=torch.float16)
+            print(b_y.size())
+            print(b_x.size())
+            output = unet(b_x)
+            loss = loss_func(output,b_y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        if (step+1)%5 ==0:
+            print(output)
+
+torch.save(unet,'hiahiahia.pkl')
