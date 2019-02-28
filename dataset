@@ -1,0 +1,123 @@
+import torch.utils.data as data
+import PIL.Image as Image
+import os
+import pydicom
+import torch
+import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
+import numpy as np
+
+file_num=['1','2','3','5','8','10','13','15','19']
+
+
+
+
+def make_dataset(root):#路径最后得加/
+   #img1=[]
+#img2=[]
+    IMG=[]
+    for i in range(len(file_num)):
+        #print(i)
+        #print(file_num[i])
+        #print(root)
+        root0=root+file_num[i]
+        #print(root)
+        root1=root0+r'\T1DUAL'+r'\DICOM_anon'
+        img1=[]
+        img2=[]
+        img3=[]
+        n=len(os.listdir(root1))//3
+        for j in range(len(os.listdir(root1))//3):
+            img=os.path.join(root1,"IMG (%d).dcm"%(j+1))
+            im=os.path.join(root1,"liver_%03d.png"%(j+1))
+            imgg=os.path.join(root1,"IMG (%d).dcm"%(j+n+1))
+            #if i==1:
+                #print(j)
+            img = pydicom.read_file(img).pixel_array.astype(float)
+            #img = torch.from_numpy(img)
+            #img = Image.fromarray(img).convert('RGB')
+            img = img.tolist()
+            
+            imgg = pydicom.read_file(imgg).pixel_array.astype(float)
+            #imgg = torch.from_numpy(imgg)
+            #imgg= Image.fromarray(imgg).convert('RGB')
+            imgg = imgg.tolist()
+            
+            im =Image.open(im)
+            #im=transforms.ToTensor()(im)
+            im = np.asarray(im)
+            
+            img1.append(img)
+            img2.append(im)
+            img3.append(imgg)
+        IMG.append([img1,img2])
+        IMG.append([img3,img2])
+        img1=[]
+        img2=[]
+        img3=[]
+        root2=root0+r'\T2SPIR'+r'\DICOM_anon'
+        
+        for k in range(len(os.listdir(root2))//2):
+           
+            img=os.path.join(root2,"IMG (%d).dcm"%(k+1))
+            im=os.path.join(root2,"liver_%03d.png"%(k+1))
+            
+            img = pydicom.read_file(img).pixel_array.astype(float)
+            #img = torch.from_numpy(img)
+            #img = Image.fromarray(img).convert('RGB')
+            img = img.tolist()
+            
+            im =  Image.open(im)
+            #im=transforms.ToTensor()(im)
+            im = np.asarray(im)
+            
+            img1.append(img)
+            img2.append(im)
+        
+        IMG.append([img1,img2])
+    return IMG
+        
+        
+'''
+    n=len(os.listdir(root))//2)
+    for i in range(n):
+        img=os.path.join(root,"%03d.jpg"%i)
+        mask=os.path.join(root,"%03d_mask.jpg"%i)
+        imgs.append((img,mask))
+    return imgs
+'''
+
+
+class LiverDataset(data.Dataset):
+    def __init__(self, root, transform=None, target_transform=None):
+        imgs = make_dataset(root)
+        self.imgs = imgs
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __getitem__(self, index):
+        img_x, img_y = self.imgs[index]
+        #img_x = Image.open(x_path)
+        #img_y = Image.open(y_path)
+        if self.transform is not None:
+            img_x = self.transform(img_x)
+        if self.target_transform is not None:
+            img_y = self.target_transform(img_y)
+        return img_x, img_y
+
+    def __len__(self):
+        return len(self.imgs)
+'''
+if __name__ == '__main__':
+    root ="D:\VScode\Chaos Data\MR_data_batch1\\"
+    data =LiverDataset(root,transform=torch.tensor,target_transform=torch.tensor)
+    print(data[1][1])
+    a=torch.unsqueeze(data[1][1],0)
+    a=torch.unsqueeze(a,0)
+    a=torch.tensor(a,dtype=torch.float32)
+    import torch.nn as nn
+    conv1=nn.Conv3d(1,2,3,padding=1)
+    a=conv1(a)
+    print(a)
+    print(a.size())
+'''
